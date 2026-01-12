@@ -19,13 +19,13 @@ public class JournalEntryService {
     @Autowired
     private UserService userService;
 
-    @Transactional
+//    @Transactional
     public void SaveEntry(journalEntryPOJO journalEntryPOJO, String userName){
         User user = userService.findByUserName(userName);
         journalEntryPOJO saved = journalEntryRepository.save(journalEntryPOJO);
         user.getJournalEntries().add(saved);
 //        User.userService.SetUserName(user);
-        userService.SaveEntry(user);
+        userService.saveUser(user);
     }
 
     public void SaveEntry(journalEntryPOJO journalEntryPOJO){
@@ -40,10 +40,21 @@ public class JournalEntryService {
         return journalEntryRepository.findById(id);
     }
 
-    public void deletebyid(ObjectId id, String userName){
-        User user = userService.findByUserName(userName);
-        user.getJournalEntries().removeIf(x -> x.getId().equals(id));
-        userService.SaveEntry(user);
-        journalEntryRepository.deleteById(id);
+    @Transactional
+    public boolean deletebyid(ObjectId id, String userName){
+        boolean removed = false;
+        try{
+            User user = userService.findByUserName(userName);
+            removed = user.getJournalEntries().removeIf(x -> x.getId().equals(id));
+            if(removed){
+                userService.saveUser(user);
+                journalEntryRepository.deleteById(id);
+            }
+        }catch(Exception e){
+            System.out.println(e);
+            throw new RuntimeException("An error while deleteing the entry. " , e);
+        }
+        return removed;
     }
+
 }
